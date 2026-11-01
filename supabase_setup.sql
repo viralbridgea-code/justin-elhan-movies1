@@ -43,3 +43,4 @@ using (exists (select 1 from public.admin_users a where a.user_id = auth.uid()))
 drop policy if exists "Admins can read own admin record" on public.admin_users;
 create policy "Admins can read own admin record" on public.admin_users
 for select to authenticated using (user_id = auth.uid());
+sb_publishable_CvNCT1cj-Dd_9f3AtwFmsA_weXd_oaz
