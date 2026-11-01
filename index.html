@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#090909">
+<title>JUSTIN ELHAN MOVIES</title>
+<style>
+:root{--bg:#090909;--panel:#151515;--gold:#e6b84b;--muted:#a7a7a7;--line:#292929}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#fff;font-family:Arial,Helvetica,sans-serif}
+header{padding:22px 16px 18px;background:linear-gradient(130deg,#17120a,#080808 60%);border-bottom:1px solid var(--line);text-align:center}
+.brand{font-weight:900;letter-spacing:2px;font-size:clamp(22px,5vw,34px);color:var(--gold)}
+.tag{font-size:11px;letter-spacing:3px;color:#c7c0b1;margin-top:7px}
+nav{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;padding:12px;border-bottom:1px solid var(--line)}
+button,.btn{border:0;border-radius:9px;padding:10px 14px;background:var(--gold);color:#17120a;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block}
+nav button{background:#202020;color:#eee;border:1px solid #333}
+nav button.active{background:var(--gold);color:#17120a}
+main{max-width:1100px;margin:auto;padding:18px 14px 60px}
+.tools{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 18px}
+input,select,textarea{width:100%;padding:12px;border-radius:9px;border:1px solid #393939;background:#101010;color:#fff;font:inherit}
+#search{flex:1;min-width:180px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.poster{width:100%;aspect-ratio:2/3;object-fit:cover;background:#252525;display:block}
+.info{padding:11px}.title{font-weight:700;font-size:14px;line-height:1.35}.meta{font-size:11px;color:var(--muted);margin:6px 0 10px}
+.card .btn{width:100%;text-align:center;font-size:12px;padding:10px 6px}
+.empty{padding:35px 10px;text-align:center;color:var(--muted);grid-column:1/-1}
+.panel{max-width:560px;margin:20px auto;background:var(--panel);padding:16px;border:1px solid var(--line);border-radius:14px}
+.panel h2{margin-top:0;color:var(--gold)}.field{margin:11px 0}.field label{display:block;font-size:12px;color:#cfcfcf;margin-bottom:6px}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}
+.small{font-size:12px;color:var(--muted);line-height:1.5}
+.hidden{display:none!important}
+footer{text-align:center;color:#777;border-top:1px solid var(--line);padding:20px;font-size:12px}
+.notice{background:#211b0e;border:1px solid #55431c;color:#e9d8aa;padding:11px;border-radius:9px;font-size:12px;line-height:1.5;margin:12px 0}
+@media(min-width:700px){.grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}}
+</style>
+</head>
+<body>
+<header><div class="brand">JUSTIN ELHAN</div><div class="tag">MOVIES • TRAILERS • ENTERTAINMENT</div></header>
+<nav>
+<button class="active" data-cat="All">All</button><button data-cat="Bollywood">Bollywood</button>
+<button data-cat="South Indian">South Indian</button><button data-cat="Hollywood">Hollywood</button>
+<button data-cat="Other">Other</button><button id="adminTab">Admin</button>
+</nav>
+<main>
+<section id="catalog">
+<div class="tools"><input id="search" placeholder="Search movies..." aria-label="Search movies"><select id="sort" style="max-width:150px"><option value="new">Newest first</option><option value="az">A–Z</option></select></div>
+<div id="movieGrid" class="grid"><div class="empty">Loading movies...</div></div>
+</section>
+<section id="admin" class="hidden">
+<div class="panel">
+<h2>Admin panel</h2>
+<div id="loginBox">
+<p class="small">Sign in with the admin account created in your Supabase project.</p>
+<div class="field"><label>Email</label><input id="email" type="email" autocomplete="username" placeholder="Admin email"></div>
+<div class="field"><label>Password</label><input id="password" type="password" autocomplete="current-password" placeholder="Password"></div>
+<button id="loginBtn">Sign in</button>
+</div>
+<div id="editor" class="hidden">
+<p class="small" id="signedInAs"></p>
+<div class="field"><label>Movie title *</label><input id="movieTitle" placeholder="Movie name"></div>
+<div class="row">
+<div class="field"><label>Category</label><select id="category"><option>Bollywood</option><option>South Indian</option><option>Hollywood</option><option>Other</option></select></div>
+<div class="field"><label>Release year</label><input id="year" type="number" min="1900" max="2100" placeholder="2026"></div>
+</div>
+<div class="field"><label>Poster image URL</label><input id="poster" type="url" placeholder="https://..."></div>
+<div class="field"><label>MediaFire or official download URL *</label><input id="download" type="url" placeholder="https://www.mediafire.com/..."></div>
+<div class="field"><label>Description</label><textarea id="description" rows="3" placeholder="Short movie description"></textarea></div>
+<button id="addBtn">Publish movie</button> <button id="logoutBtn" style="background:#333;color:white">Sign out</button>
+<p class="small">This publishes the movie listing to your public website. The actual movie file stays on MediaFire or the linked authorized host.</p>
+</div>
+<div class="notice">Only add movies, posters and download links that you own or are authorized to distribute. Do not share pirated copies.</div>
+</div>
+</section>
+</main>
+<footer>© <span id="yearNow"></span> JUSTIN ELHAN MOVIES • Share only authorized content</footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* SETUP: replace these two values with your Supabase Project URL and anon/public key. */
+const SUPABASE_URL = "PASTE_YOUR_SUPABASE_PROJECT_URL";
+const SUPABASE_ANON_KEY = "PASTE_YOUR_SUPABASE_ANON_KEY";
+const configured = SUPABASE_URL.startsWith("https://") && !SUPABASE_URL.includes("PASTE_") && !SUPABASE_ANON_KEY.includes("PASTE_");
+const db = configured ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+let activeCategory = "All", movies = [];
+const $ = id => document.getElementById(id);
+$("yearNow").textContent = new Date().getFullYear();
+
+function safeUrl(value){try{const u=new URL(value);return ["http:","https:"].includes(u.protocol)?u.href:"#"}catch{return "#"}}
+function render(){
+ const q=$("search").value.trim().toLowerCase(), sort=$("sort").value;
+ let list=movies.filter(m=>(activeCategory==="All"||m.category===activeCategory)&&
+  ((m.title||"").toLowerCase().includes(q)||(m.description||"").toLowerCase().includes(q)));
+ if(sort==="az")list.sort((a,b)=>(a.title||"").localeCompare(b.title||""));
+ else list.sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0));
+ $("movieGrid").innerHTML="";
+ if(!list.length){$("movieGrid").innerHTML='<div class="empty">No movies found. Check back soon!</div>';return}
+ list.forEach(m=>{
+  const card=document.createElement("article");card.className="card";
+  const img=document.createElement("img");img.className="poster";img.alt=(m.title||"Movie")+" poster";
+  img.src=safeUrl(m.poster_url||"");img.onerror=()=>{img.removeAttribute("src");img.style.background="#252525"};
+  const info=document.createElement("div");info.className="info";
+  const title=document.createElement("div");title.className="title";title.textContent=m.title||"Untitled";
+  const meta=document.createElement("div");meta.className="meta";meta.textContent=[m.category,m.release_year].filter(Boolean).join(" • ");
+  const link=document.createElement("a");link.className="btn";link.textContent="DOWNLOAD / WATCH";link.href=safeUrl(m.download_url||"");link.target="_blank";link.rel="noopener noreferrer";
+  info.append(title,meta);if(m.description){const d=document.createElement("p");d.className="small";d.textContent=m.description;info.append(d)}info.append(link);card.append(img,info);$("movieGrid").append(card);
+ });
+}
+async function loadMovies(){
+ if(!db){$("movieGrid").innerHTML='<div class="empty">Website setup is not finished yet. Add your Supabase settings in index.html and run the setup SQL.</div>';return}
+ const {data,error}=await db.from("movies").select("*").order("created_at",{ascending:false});
+ if(error){$("movieGrid").innerHTML='<div class="empty">Could not load movies. Check your Supabase setup.</div>';return}
+ movies=data||[];render();
+}
+document.querySelectorAll("nav [data-cat]").forEach(b=>b.addEventListener("click",()=>{
+ document.querySelectorAll("nav [data-cat]").forEach(x=>x.classList.remove("active"));b.classList.add("active");
+ activeCategory=b.dataset.cat;render();
+}));
+$("search").addEventListener("input",render);$("sort").addEventListener("change",render);
+$("adminTab").onclick=()=>{$("catalog").classList.add("hidden");$("admin").classList.remove("hidden")};
+document.querySelectorAll("nav [data-cat]").forEach(b=>b.addEventListener("click",()=>{$("admin").classList.add("hidden");$("catalog").classList.remove("hidden")}));
+$("loginBtn").onclick=async()=>{
+ if(!db){alert("Finish Supabase setup first.");return}
+ const {data,error}=await db.auth.signInWithPassword({email:$("email").value,password:$("password").value});
+ if(error){alert(error.message);return}
+ $("loginBox").classList.add("hidden");$("editor").classList.remove("hidden");$("signedInAs").textContent="Signed in as "+data.user.email;
+};
+$("logoutBtn").onclick=async()=>{await db.auth.signOut();$("editor").classList.add("hidden");$("loginBox").classList.remove("hidden")};
+$("addBtn").onclick=async()=>{
+ const title=$("movieTitle").value.trim(),download=safeUrl($("download").value.trim());
+ if(!title||download==="#"){alert("Enter a movie title and a valid download URL.");return}
+ const row={title,category:$("category").value,release_year:$("year").value?Number($("year").value):null,
+ poster_url:$("poster").value.trim()?safeUrl($("poster").value.trim()):null,download_url:download,description:$("description").value.trim()};
+ const {error}=await db.from("movies").insert(row);
+ if(error){alert(error.message);return}
+ ["movieTitle","year","poster","download","description"].forEach(id=>$(id).value="");
+ alert("Movie published!");await loadMovies();
+};
+loadMovies();
+</script>
+</body></html>
